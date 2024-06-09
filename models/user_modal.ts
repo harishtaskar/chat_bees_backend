@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {type: String, required: true},
   salt: {type: String, required: true},
+  status: {type: Number, required: true, default: 1},
 });
 
 export const User = mongoose.model("User", userSchema);

@@ -10,10 +10,6 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use("/user", user_router);
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
 app.listen(PORT, () => {
   console.log(`app listening on port ${PORT}`)
 })

@@ -17,7 +17,7 @@ const userAuth = async (req: any, res: any, next: any) => {
       .status(500)
       .json({
         error,
-        msg: "Error Authentication User",
+        msg: "Invalid Auth Token",
         status: 500,
         res: "Error",
       });
