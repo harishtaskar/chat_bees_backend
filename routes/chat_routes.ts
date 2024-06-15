@@ -4,6 +4,7 @@ import { User } from "../models/user_modal";
 import { Conversation } from "../models/conversation_modal";
 import connectDB from "../utils/database";
 import { GroupMember } from "../models/group_member_modal";
+import { IConversation } from "../types";
 
 const chat_router = Router();
 
@@ -60,9 +61,70 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({
+    res.send({
       error,
       msg: "Error initializing chat",
+      status: 500,
+      res: "Error",
+    });
+  }
+});
+
+chat_router.post("/leave", userAuth, async (req: any, res: any) => {
+  try {
+    const { conversation_id } = req.body;
+    const user_id = req.user_id;
+    if (!conversation_id) {
+      res.send({
+        require: {
+          conversation_id: "require",
+        },
+        msg: "invalid Payload",
+        status: 500,
+        res: "Invalid",
+      });
+    } else {
+      await connectDB();
+      const conversation: IConversation | null = await Conversation.findById(
+        conversation_id
+      );
+      if (conversation?.type === "individual") {
+        const result = await GroupMember.deleteOne({
+          user_id: user_id,
+          conversation_id: conversation_id,
+        });
+        const result2 = await Conversation.deleteOne({ _id: conversation_id });
+        if (Number(result.deletedCount) && Number(result2.deletedCount)) {
+          res.send({
+            msg: "Conversation Leaved",
+            status: 200,
+            res: "ok",
+          });
+        }
+      } else {
+        const result = await GroupMember.deleteOne({
+          user_id: user_id,
+          conversation_id: conversation_id,
+        });
+        if (Number(result.deletedCount)) {
+          res.send({
+            msg: "Conversation Leaved",
+            status: 200,
+            res: "ok",
+          });
+        }
+      }
+      res.send({
+        msg: "Something went wrong",
+        status: 500,
+        res: "Error",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({
+      error,
+      msg: "Error leaving chat",
       status: 500,
       res: "Error",
     });

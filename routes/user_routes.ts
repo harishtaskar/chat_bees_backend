@@ -9,6 +9,8 @@ import { userExists, validateDOB } from "../utils/validations";
 import { NormalizeUsername } from "../utils/mongoClient";
 import { GroupMember } from "../models/group_member_modal";
 import { ObjectId } from "mongodb";
+import { IUser } from "../types";
+
 const user_router = Router();
 const jwtPassword: any = JWT_PASSWORD;
 
@@ -265,4 +267,66 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
     res.send({ error, msg: "Error Updating User", status: 500, res: "Error" });
   }
 });
+
+user_router.put("/update-password", userAuth, async (req: any, res: any) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    let requireFields: any = {};
+    if (!oldPassword) {
+      requireFields.oldPassword = "required";
+    } else if (!newPassword) {
+      requireFields.newPassword = "required";
+    }
+    if (Object.keys(requireFields).length !== 0) {
+      res.send({
+        msg: "Invalid Payload",
+        requireFields,
+        status: 200,
+        res: "Error",
+      });
+    } else {
+      await connectDB();
+      const user_id = req.user_id;
+      const user: IUser | null = await User.findById(user_id);
+      const match = await bcrypt.compare(oldPassword, user?.password || "");
+      if (match) {
+        const saltRound = 10;
+        bcrypt.genSalt(saltRound, function (err, salt) {
+          bcrypt.hash(newPassword, salt, async function (err, hashedPasswrod) {
+            if (err) {
+              res.send({
+                err,
+                msg: "Error while hashing password",
+                status: 500,
+                res: "Error",
+              });
+            }
+            const updatedUser = await User.updateOne(
+              { _id: user_id },
+              {
+                password: hashedPasswrod,
+                salt,
+              }
+            );
+            if (Number(updatedUser.matchedCount)) {
+              res.send({
+                msg: "Password Updated Successfully",
+                status: 200,
+                res: "ok",
+              });
+            }
+          });
+        });
+      } else {
+        res.send({
+          msg: "Invalid Old Password",
+          requireFields,
+          status: 200,
+          res: "Error",
+        });
+      }
+    }
+  } catch (error) {}
+});
+
 export default user_router;
