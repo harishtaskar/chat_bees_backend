@@ -6,9 +6,10 @@ const userAuth = async (req: any, res: any, next: any) => {
   try {
     const auth = req.headers.authorization;
     const token = auth.split(" ")[1];
-    const user: any = jwt.verify(token, jwtPassword);
-    if (user) {
-      req.username = user.username;
+    const decodedToken: any = jwt.verify(token, jwtPassword);
+    if (decodedToken) {
+      req.username = decodedToken.username;
+      req.user_id = decodedToken.user_id;
       next();
     }
   } catch (error) {

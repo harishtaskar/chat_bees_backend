@@ -7,17 +7,22 @@ import { JWT_PASSWORD } from "../config/config";
 import userAuth from "../middlewares/user_auth";
 import { userExists, validateDOB } from "../utils/validations";
 import { NormalizeUsername } from "../utils/mongoClient";
+import { GroupMember } from "../models/group_member_modal";
+import { ObjectId } from "mongodb";
 const user_router = Router();
 const jwtPassword: any = JWT_PASSWORD;
 
 user_router.post("/signup", async (req, res) => {
   try {
-    const { username, password, gender, dob, profileicon } = req?.body;
+    const { occupation, username, password, gender, dob, profileicon } =
+      req?.body;
     const requiredFields: any = {};
     if (username?.trim() === "") {
       requiredFields.username = "require";
     } else if (dob.trim() === "") {
       requiredFields.dob = "require";
+    } else if (occupation.trim() === "") {
+      requiredFields.occupation = "require";
     } else if (profileicon?.trim() === "") {
       requiredFields.profileicon = "require";
     } else if (gender?.trim() === "") {
@@ -66,6 +71,7 @@ user_router.post("/signup", async (req, res) => {
               salt,
               password: hashedPasswrod,
               profileicon,
+              occupation,
             });
             await user.save();
             if (user) {
@@ -110,7 +116,7 @@ user_router.post("/signin", async (req, res) => {
     } else {
       await connectDB();
       const user: any = await User.findOne({ username });
-      const token = jwt.sign({ username }, jwtPassword);
+      const token = jwt.sign({ username, user_id: user?._id }, jwtPassword);
       if (user) {
         bcrypt.compare(password, user?.password, function (err, result) {
           if (err) {
@@ -152,17 +158,26 @@ user_router.post("/signin", async (req, res) => {
   }
 });
 
+user_router.get("/", userAuth, async (req: any, res: any) => {
+  try {
+    const user_id = req.user_id;
+    await connectDB();
+    const user: any = await User.findOne({ _id: user_id });
+    res.send({ msg: "This is user", user, status: 200, res: "ok" });
+  } catch (error) {
+    res.send({ error, msg: "Error Fetching Users", status: 500, res: "Error" });
+  }
+});
+
 user_router.get("/users", userAuth, async (req, res) => {
   try {
     const { filter } = req.headers;
     await connectDB();
     const users: any = await User.find({
       $or: [{ username: { $regex: filter, $options: "i" } }],
-      $and: [{status: 1}]
+      $and: [{ status: 1 }],
     });
-    if (users?.length) {
-      res.send({ msg: "This are users", users, status: 200, res: "ok" });
-    }
+    res.send({ msg: "This are users", users, status: 200, res: "ok" });
   } catch (error) {
     res.send({ error, msg: "Error Fetching Users", status: 500, res: "Error" });
   }
@@ -207,11 +222,13 @@ user_router.post("/deactivate", userAuth, async (req: any, res) => {
   try {
     const username = req.username;
     await connectDB();
-        await User.findOneAndUpdate({ username }, {status: 99});
-        const user: any = await User.findOne({ username });
-        if (user) {
-          res.send({ msg: "User Deactivated", user, status: 200, res: "ok" });
-        }
+    await User.findOneAndUpdate({ username }, { status: 99 });
+    const user: any = await User.findOne({ username });
+    if (user) {
+      res.send({ msg: "User Deactivated", user, status: 200, res: "ok" });
+    } else {
+      res.send({ msg: "User Not found", user, status: 200, res: "Error" });
+    }
   } catch (error) {
     console.log(error);
     res
@@ -220,4 +237,32 @@ user_router.post("/deactivate", userAuth, async (req: any, res) => {
   }
 });
 
+user_router.get("/connections", userAuth, async (req: any, res: any) => {
+  try {
+    const user_id = req.user_id;
+    if (user_id) {
+      await connectDB();
+      const connections = await GroupMember.find({
+        user_id: new ObjectId(user_id),
+      }).populate(["conversation_id", "createdBy"]);
+      if (connections.length) {
+        res.send({
+          msg: "Connection fetched successfully",
+          connections,
+          status: 200,
+          res: "ok",
+        });
+      } else {
+        res.send({
+          msg: "No connections found",
+          connections,
+          status: 200,
+          res: "ok",
+        });
+      }
+    }
+  } catch (error) {
+    res.send({ error, msg: "Error Updating User", status: 500, res: "Error" });
+  }
+});
 export default user_router;
