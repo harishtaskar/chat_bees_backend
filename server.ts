@@ -8,8 +8,10 @@ import chat_router from "./routes/chat_routes";
 import SocketService from "./services/socket";
 import http from "http";
 const app = express();
+import { startConsumer } from "./services/kafka";
 
 const init = () => {
+  startConsumer();
   const socketService = new SocketService();
 
   const httpServer = new http.Server(app);
