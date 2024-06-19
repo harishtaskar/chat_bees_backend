@@ -6,12 +6,14 @@ export const saveMessage = async (message: IMessage) => {
   try {
     if (message) {
       await connectDB();
-      const newMessage = await Message.create(message);
-      if (newMessage) {
-        console.log("new message is stored to messages...", newMessage);
-      } else {
-        console.log("Something went wrong storing message to database***");
-      }
+      await Message.create({
+        conversation_id: message?.conversation_id,
+        from_user: message?.from_user,
+        sendAt: message?.sendAt || Date.now(),
+        status: message?.status,
+        content: message?.content,
+        type: message?.type,
+      });
     }
   } catch (error) {
     console.log(error);

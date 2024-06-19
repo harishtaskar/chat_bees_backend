@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import { saveMessage } from "./utility";
 import { ObjectId } from "mongodb";
+import { IMessage } from "../types";
 
 const kafka = new Kafka({
   brokers: [`${KAFKA_HOST}:${KAFKA_PORT}`],
@@ -50,16 +51,15 @@ export const startConsumer = async () => {
     autoCommit: true,
     eachMessage: async ({ message, pause }) => {
       if (!message.value) return;
-      console.log("new message recieved in kafka consumer...", message.value);
-      //store message to database here...
+      console.log(
+        "new message recieved in kafka consumer...",
+        message.value.toString("utf8")
+      );
       try {
-        await saveMessage({
-          text: message.value?.toString(),
-          conversation_id: new ObjectId("asdasdasd"),
-          from_user: "test",
-        });
+        const msg: IMessage | any = message.value.toString("utf8");
+        await saveMessage(JSON.parse(msg));
       } catch (error) {
-        console.log("Something went wrong...");
+        console.log("Something went wrong...", error);
         pause();
         setTimeout(() => {
           consumer.resume([{ topic: "MESSAGES" }]);

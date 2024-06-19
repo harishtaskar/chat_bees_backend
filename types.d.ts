@@ -23,7 +23,9 @@ export interface IConversation {
 
 export interface IMessage {
   from_user: string;
-  text: string;
-  sendAt?: Date; // Optional, because it has a default value
+  content: string;
+  type: "text" | "gif" | "image";
+  sendAt?: Date; // Optional because it has a default value
   conversation_id: mongoose.Types.ObjectId;
+  status?: number;
 }

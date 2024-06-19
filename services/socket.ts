@@ -41,10 +41,7 @@ class SocketService {
     console.log("Initiialized Socket listeners...");
     io.on("connect", async (socket) => {
       console.log("New Socket Connected...", socket.id);
-
       socket.on("event:message", async (message: IMessage) => {
-        console.log("new Message recieved : ", message.text);
-
         await pub.publish("MESSAGES", JSON.stringify(message));
       });
     });
