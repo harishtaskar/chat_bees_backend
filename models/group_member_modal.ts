@@ -1,9 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 
 const groupMemberSchema = new mongoose.Schema({
-  name: {type: String, required: true},
-  user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  conversation_id: {
+  name: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  conversation: {
     type: Schema.Types.ObjectId,
     ref: "Conversation",
     required: true,

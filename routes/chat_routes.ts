@@ -29,6 +29,16 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
       const username = req.username;
       const user1 = await User.findOne({ username });
       const con_type: string = group_users?.length > 1 ? "group" : "individual";
+      const existingConversation = await Conversation.findOne({
+        uniqueStr: `${user1?._id}-${group_name}`,
+      });
+      if (existingConversation) {
+        res.send({
+          status: 200,
+          msg: "conversation exists",
+          res: "Error",
+        });
+      }
       const users = await User.find({
         _id: { $in: [...group_users, user1?._id] },
       });
@@ -36,14 +46,15 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
         name: `${group_name}`,
         type: con_type,
         status: 1,
+        uniqueStr: `${user1?._id}-${group_name}`,
       });
       await conversation.save();
       if (conversation && users.length && user1) {
         for (const user of users) {
           const group_member = new GroupMember({
             name: group_name,
-            user_id: user?._id,
-            conversation_id: conversation._id,
+            user: user?._id,
+            conversation: conversation._id,
             createdAt: Date.now(),
             createdBy: user1?._id,
             joinedAt: Date.now(),
@@ -57,6 +68,7 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
         conversation,
         group_members,
         msg: "chat initialized successfully",
+        res: "ok",
       });
     }
   } catch (error) {
@@ -90,8 +102,8 @@ chat_router.post("/leave", userAuth, async (req: any, res: any) => {
       );
       if (conversation?.type === "individual") {
         const result = await GroupMember.deleteOne({
-          user_id: user_id,
-          conversation_id: conversation_id,
+          user: user_id,
+          conversation: conversation_id,
         });
         const result2 = await Conversation.deleteOne({ _id: conversation_id });
         if (Number(result.deletedCount) && Number(result2.deletedCount)) {
@@ -103,8 +115,8 @@ chat_router.post("/leave", userAuth, async (req: any, res: any) => {
         }
       } else {
         const result = await GroupMember.deleteOne({
-          user_id: user_id,
-          conversation_id: conversation_id,
+          user: user_id,
+          conversation: conversation_id,
         });
         if (Number(result.deletedCount)) {
           res.send({

@@ -5,9 +5,13 @@ const ConversationSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  uniqueStr: {
+    type: String,
+    required: true,
+  },
   type: {
     type: String,
-    enum: ["individual", "group"]
+    enum: ["individual", "group"],
   },
   createdAt: {
     type: Date,

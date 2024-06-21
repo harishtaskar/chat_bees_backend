@@ -16,7 +16,7 @@ const jwtPassword: any = JWT_PASSWORD;
 
 user_router.post("/signup", async (req, res) => {
   try {
-    const { occupation, username, password, gender, dob, profileicon } =
+    const { occupation, username, password, gender, dob, profileIcon } =
       req?.body;
     const requiredFields: any = {};
     if (username?.trim() === "") {
@@ -25,8 +25,8 @@ user_router.post("/signup", async (req, res) => {
       requiredFields.dob = "require";
     } else if (occupation.trim() === "") {
       requiredFields.occupation = "require";
-    } else if (profileicon?.trim() === "") {
-      requiredFields.profileicon = "require";
+    } else if (profileIcon?.trim() === "") {
+      requiredFields.profileIcon = "require";
     } else if (gender?.trim() === "") {
       requiredFields.gender = { require: true, type: "male/female" };
     } else if (password?.trim().length < 8) {
@@ -72,7 +72,7 @@ user_router.post("/signup", async (req, res) => {
               gender,
               salt,
               password: hashedPasswrod,
-              profileicon,
+              profileIcon,
               occupation,
             });
             await user.save();
@@ -185,7 +185,7 @@ user_router.get("/users", userAuth, async (req, res) => {
   }
 });
 
-user_router.put("/update", userAuth, async (req: any, res) => {
+user_router.patch("/update", userAuth, async (req: any, res) => {
   try {
     const { update } = req.body;
     const username = req.username;
@@ -244,9 +244,22 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
     const user_id = req.user_id;
     if (user_id) {
       await connectDB();
-      const connections = await GroupMember.find({
-        user_id: new ObjectId(user_id),
-      }).populate(["conversation_id", "createdBy"]);
+      const conversations = await GroupMember.find({
+        user: new ObjectId(user_id),
+      });
+
+      console.log(conversations);
+
+      const conv_ids = conversations?.map((conn) => conn.conversation);
+
+      const groupMember = await GroupMember.find({
+        $and: [{ conversation: { $in: conv_ids } }, { user: { $ne: user_id } }],
+      });
+
+      const users_ids = groupMember?.map((conn) => conn.user);
+
+      const connections = await User.find({ _id: { $in: users_ids } });
+
       if (connections.length) {
         res.send({
           msg: "Connection fetched successfully",
@@ -264,7 +277,13 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
       }
     }
   } catch (error) {
-    res.send({ error, msg: "Error Updating User", status: 500, res: "Error" });
+    console.log(error);
+    res.send({
+      error,
+      msg: "Error Fetching connections",
+      status: 500,
+      res: "Error",
+    });
   }
 });
 

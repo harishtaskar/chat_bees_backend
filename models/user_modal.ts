@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  profileicon: { type: String, default: "icon1" },
+  profileIcon: { type: String, default: "icon1" },
   occupation: { type: String, required: true },
   dob: { type: Date },
   createdAt: { type: Date, default: Date.now },
