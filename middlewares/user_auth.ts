@@ -11,17 +11,21 @@ const userAuth = async (req: any, res: any, next: any) => {
       req.username = decodedToken.username;
       req.user_id = decodedToken.user_id;
       next();
+    } else {
+      res.send({
+        msg: "Invalid Auth Token",
+        status: 200,
+        res: "Error",
+      });
     }
   } catch (error) {
     console.log(error);
-    res
-      .status(500)
-      .json({
-        error,
-        msg: "Invalid Auth Token",
-        status: 500,
-        res: "Error",
-      });
+    res.send({
+      error,
+      msg: "Invalid Auth Token",
+      status: 500,
+      res: "Error",
+    });
   }
 };
 

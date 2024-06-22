@@ -5,7 +5,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_PASSWORD } from "../config/config";
 import userAuth from "../middlewares/user_auth";
-import { userExists, validateDOB } from "../utils/validations";
+import {
+  userExists,
+  validateDOB,
+  validateUsername,
+} from "../utils/validations";
 import { NormalizeUsername } from "../utils/mongoClient";
 import { GroupMember } from "../models/group_member_modal";
 import { ObjectId } from "mongodb";
@@ -19,8 +23,8 @@ user_router.post("/signup", async (req, res) => {
     const { occupation, username, password, gender, dob, profileIcon } =
       req?.body;
     const requiredFields: any = {};
-    if (username?.trim() === "") {
-      requiredFields.username = "require";
+    if (username?.trim() === "" || !validateUsername(username?.trim())) {
+      requiredFields.username = "require without capital latter and space";
     } else if (dob.trim() === "") {
       requiredFields.dob = "require";
     } else if (occupation.trim() === "") {
@@ -50,7 +54,7 @@ user_router.post("/signup", async (req, res) => {
         });
       } else if (!validateDOB(dob)) {
         res.send({
-          msg: "Invalid Age",
+          msg: "Your age should be more than 16",
           status: 200,
           res: "Invalid",
         });
@@ -171,13 +175,14 @@ user_router.get("/", userAuth, async (req: any, res: any) => {
   }
 });
 
-user_router.get("/users", userAuth, async (req, res) => {
+user_router.get("/users", userAuth, async (req: any, res) => {
   try {
     const { filter } = req.headers;
+    const username = req.username;
     await connectDB();
     const users: any = await User.find({
       $or: [{ username: { $regex: filter, $options: "i" } }],
-      $and: [{ status: 1 }],
+      $and: [{ status: 1 }, { username: { $ne: username } }],
     });
     res.send({ msg: "This are users", users, status: 200, res: "ok" });
   } catch (error) {
@@ -195,12 +200,21 @@ user_router.patch("/update", userAuth, async (req: any, res) => {
         msg: "invalid payload",
         requiredField: { update: "Object" },
         status: 500,
-        res: "ok",
+        res: "Error",
       });
     } else {
-      if (update?.username && (await userExists(update?.username))) {
+      if (
+        update?.username !== username &&
+        (await userExists(update?.username))
+      ) {
         res.send({
           msg: "Username Already Exists",
+          status: 200,
+          res: "Invalid",
+        });
+      } else if (update?.dob && !validateDOB(update?.dob?.toString())) {
+        res.send({
+          msg: "Your age should be more than 16",
           status: 200,
           res: "Invalid",
         });
@@ -248,8 +262,6 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
         user: new ObjectId(user_id),
       });
 
-      console.log(conversations);
-
       const conv_ids = conversations?.map((conn) => conn.conversation);
 
       const groupMember = await GroupMember.find({
@@ -287,14 +299,22 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
   }
 });
 
-user_router.put("/update-password", userAuth, async (req: any, res: any) => {
+user_router.patch("/update-password", userAuth, async (req: any, res: any) => {
   try {
     const { oldPassword, newPassword } = req.body;
     let requireFields: any = {};
-    if (!oldPassword) {
-      requireFields.oldPassword = "required";
-    } else if (!newPassword) {
-      requireFields.newPassword = "required";
+    if (!oldPassword || oldPassword?.length < 8) {
+      requireFields.oldPassword = "required password > 8";
+    } else if (!newPassword || newPassword?.length < 8) {
+      requireFields.newPassword = "required password > 8";
+    }
+    if (oldPassword === newPassword) {
+      res.send({
+        msg: "New password Can't be same",
+        requireFields,
+        status: 200,
+        res: "Error",
+      });
     }
     if (Object.keys(requireFields).length !== 0) {
       res.send({
