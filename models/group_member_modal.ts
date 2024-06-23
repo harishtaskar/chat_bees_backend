@@ -1,16 +1,17 @@
 import mongoose, { Schema } from "mongoose";
 
 const groupMemberSchema = new mongoose.Schema({
-  user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  conversation_id: {
+  name: { type: String, required: true },
+  user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  conversation: {
     type: Schema.Types.ObjectId,
     ref: "Conversation",
     required: true,
   },
-  dob: { type: Date },
   joinedAt: { type: Date },
   leftAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
+  createdBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 export const GroupMember = mongoose.model("Group_Member", groupMemberSchema);
