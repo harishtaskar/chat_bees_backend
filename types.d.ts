@@ -11,6 +11,7 @@ export interface IUser {
   password: string;
   salt: string;
   status?: number; // Optional, because it has a default value
+  theme?: "dark" | "light";
 }
 
 export interface IConversation {

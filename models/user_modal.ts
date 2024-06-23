@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   salt: { type: String, required: true },
   status: { type: Number, required: true, default: 1 },
+  theme: {
+    type: String,
+    enum: ["dark", "light"],
+    default: "light",
+  },
 });
 
 export const User = mongoose.model("User", userSchema);
