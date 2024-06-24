@@ -9,6 +9,7 @@ import SocketService from "./services/socket";
 import http from "http";
 const app = express();
 import { startConsumer } from "./services/kafka";
+import conversation_router from "./routes/conversation_routes";
 
 const init = () => {
   startConsumer();
@@ -20,6 +21,7 @@ const init = () => {
   app.use(bodyParser.json());
   app.use("/user", user_router);
   app.use("/chat", chat_router);
+  app.use("/conversation", conversation_router);
 
   socketService.io.attach(httpServer);
 

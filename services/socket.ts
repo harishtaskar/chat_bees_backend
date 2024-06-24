@@ -41,15 +41,27 @@ class SocketService {
     console.log("Initiialized Socket listeners...");
     io.on("connect", async (socket) => {
       console.log("New Socket Connected...", socket.id);
+
+      socket.on("joinConversation", (conversation) => {
+        socket.join(conversation);
+        console.log(`${socket.id} joined room: ${conversation}`);
+      });
+
       socket.on("event:message", async (message: IMessage) => {
         await pub.publish("MESSAGES", JSON.stringify(message));
       });
+
+      socket.on("disconnect", () => {
+        console.log("Client disconnected:", socket.id);
+      });
     });
 
-    sub.on("message", async (channel, message) => {
+    sub.on("message", async (channel, message: any) => {
       if (channel === "MESSAGES") {
-        io.emit("message", message);
-        await produceMessage(message);
+        const messageObj = JSON.parse(message);
+        console.log("messageObj", messageObj);
+        io.to(messageObj?.conversation_id).emit("message", message);
+        await produceMessage(JSON.stringify(message));
         console.log("Message Produced to Kafka Broker...");
       }
     });

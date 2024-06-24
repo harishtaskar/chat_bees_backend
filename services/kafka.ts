@@ -51,13 +51,12 @@ export const startConsumer = async () => {
     autoCommit: true,
     eachMessage: async ({ message, pause }) => {
       if (!message.value) return;
-      console.log(
-        "new message recieved in kafka consumer...",
-        message.value.toString("utf8")
-      );
       try {
         const msg: IMessage | any = message.value.toString("utf8");
-        await saveMessage(JSON.parse(msg));
+        const msgObj = JSON.parse(msg);
+        if (Object.keys(msgObj).length !== 0) {
+          await saveMessage(msgObj);
+        }
       } catch (error) {
         console.log("Something went wrong...", error);
         pause();
