@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IUser {
+  _id?: string;
   username: string;
   profileIcon?: string; // Optional, because it has a default value
   occupation: string;

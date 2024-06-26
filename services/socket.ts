@@ -9,6 +9,7 @@ import {
 } from "../config/config";
 
 import { produceMessage } from "./kafka";
+import { getGroupMembers } from "./utility";
 
 const pub = new Redis({
   host: REDIS_HOST,
@@ -42,9 +43,25 @@ class SocketService {
     io.on("connect", async (socket) => {
       console.log("New Socket Connected...", socket.id);
 
-      socket.on("joinConversation", (conversation) => {
+      socket.on("userId", (user_id) => {
+        socket.join(user_id);
+      });
+
+      socket.on("joinConversation", async (conversation) => {
         socket.join(conversation);
-        console.log(`${socket.id} joined room: ${conversation}`);
+        const group_members: any = await getGroupMembers(conversation);
+        if (group_members !== null) {
+          for (const group_member of group_members) {
+            console.log(
+              "group_member_userid ==>",
+              group_member?.user?.toString()
+            );
+            io.to(group_member?.user?.toString()).emit(
+              "joinConversation",
+              conversation
+            );
+          }
+        }
       });
 
       socket.on("event:message", async (message: IMessage) => {
