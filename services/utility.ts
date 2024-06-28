@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { GroupMember } from "../models/group_member_modal";
 import { Message } from "../models/message_modal";
 import connectDB from "../utils/database";
+import { ConversationMSGCount } from "../models/conversation_msg_count";
 
 export const saveMessage = async (message: any) => {
   try {
@@ -30,6 +31,31 @@ export const getGroupMembers = async (conversation: string) => {
     });
     if (group_members?.length) {
       return group_members;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+
+export const increaseUnreadMSGCount = async (
+  conversation_id: string,
+  user_id: string
+) => {
+  try {
+    await connectDB();
+    await ConversationMSGCount.updateOne(
+      { conversation_id, user_id },
+      { $inc: { unread_msg: 1 } }
+    );
+    const conv_msg_count = await ConversationMSGCount.findOne({
+      user_id,
+      conversation_id,
+    });
+    if (conv_msg_count) {
+      return conv_msg_count;
     } else {
       return null;
     }

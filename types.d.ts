@@ -24,7 +24,7 @@ export interface IConversation {
 }
 
 export interface IMessage {
-  from_user: string;
+  from_user: mongoose.Types.ObjectId;
   content: string;
   type: "text" | "gif" | "image";
   sendAt?: Date; // Optional because it has a default value

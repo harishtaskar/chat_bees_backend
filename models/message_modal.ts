@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
 const messageSchema = new mongoose.Schema({
-  from_user: { type: String, required: true },
+  from_user: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   content: { type: String, required: true },
   type: {
     type: String,
