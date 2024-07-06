@@ -12,7 +12,12 @@ const ConversationMsgCountSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  unread_msg: {
+  msg_count: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  unread_msg_count: {
     type: Number,
     required: true,
     default: 0,
