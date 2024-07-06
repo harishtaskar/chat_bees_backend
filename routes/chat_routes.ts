@@ -5,6 +5,7 @@ import { Conversation } from "../models/conversation_modal";
 import connectDB from "../utils/database";
 import { GroupMember } from "../models/group_member_modal";
 import { IConversation, IUser } from "../types";
+import mongoose from "mongoose";
 
 const chat_router = Router();
 
@@ -82,63 +83,113 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
   }
 });
 
-// chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
-//   try {
-//     const { user_id } = req.headers;
-//     const currentUserId = req.user_id;
-//     if (!user_id) {
-//       res.send({
-//         require: {
-//           username: "require",
-//         },
-//         msg: "invalid Payload",
-//         status: 500,
-//         res: "Invalid",
-//       });
-//     } else {
-//       await connectDB();
-//       const userToRemove: IUser | null = await User.findById(user_id);
-//       if (?.type === "individual") {
-//         const result = await GroupMember.deleteOne({
-//           user: user_id,
-//           conversation: conversation_id,
-//         });
-//         const result2 = await Conversation.deleteOne({ _id: conversation_id });
-//         if (Number(result.deletedCount) && Number(result2.deletedCount)) {
-//           res.send({
-//             msg: "Conversation Leaved",
-//             status: 200,
-//             res: "ok",
-//           });
-//         }
-//       } else {
-//         const result = await GroupMember.deleteOne({
-//           user: user_id,
-//           conversation: conversation_id,
-//         });
-//         if (Number(result.deletedCount)) {
-//           res.send({
-//             msg: "Conversation Leaved",
-//             status: 200,
-//             res: "ok",
-//           });
-//         }
-//       }
-//       res.send({
-//         msg: "Something went wrong",
-//         status: 500,
-//         res: "Error",
-//       });
-//     }
-//   } catch (error) {
-//     console.log(error);
-//     res.send({
-//       error,
-//       msg: "Error leaving chat",
-//       status: 500,
-//       res: "Error",
-//     });
-//   }
-// });
+chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
+  try {
+    const { user_id, conversation_id } = req.headers;
+    const currentUserId = req.user_id;
+    if (user_id === undefined) {
+      res.send({
+        require: {
+          username: "require",
+        },
+        msg: "invalid Payload",
+        status: 500,
+        res: "Invalid",
+      });
+    } else {
+      await connectDB();
+      const users = [
+        new mongoose.Types.ObjectId(user_id),
+        new mongoose.Types.ObjectId(currentUserId),
+      ];
+      const group_members_to_delete = await GroupMember.aggregate([
+        {
+          $match: {
+            user: { $in: users },
+          },
+        },
+        {
+          $group: {
+            _id: "$conversation",
+            count: { $sum: 1 },
+            documents: { $push: "$$ROOT" },
+          },
+        },
+        {
+          $match: {
+            count: { $gt: 1 },
+          },
+        },
+        {
+          $unwind: "$documents",
+        },
+        {
+          $replaceRoot: { newRoot: "$documents" },
+        },
+      ]);
+
+      const conv_to_delete = await Conversation.findById(
+        group_members_to_delete[0].conversation
+      );
+
+      if (
+        group_members_to_delete?.length > 1 &&
+        conv_to_delete?.type === "individual"
+      ) {
+        let result: any = null;
+        for (const group_member of group_members_to_delete) {
+          result = await GroupMember.deleteOne({
+            user: group_member.user,
+            conversation: group_member.conversation,
+          });
+        }
+
+        const result2 = await Conversation.deleteOne({
+          _id: group_members_to_delete[0].conversation,
+        });
+
+        if (Number(result.deletedCount) && Number(result2.deletedCount)) {
+          res.send({
+            msg: "Conversation Leaved",
+            status: 200,
+            res: "ok",
+          });
+        } else {
+          res.send({
+            msg: "Something went wrong",
+            status: 500,
+            res: "Error",
+          });
+        }
+      } else {
+        const result = await GroupMember.deleteOne({
+          user: new mongoose.Types.ObjectId(currentUserId),
+          conversation: new mongoose.Types.ObjectId(conversation_id),
+        });
+        if (Number(result.deletedCount)) {
+          res.send({
+            msg: "Conversation Leaved",
+            status: 200,
+            res: "ok",
+          });
+        } else {
+          res.send({
+            msg: "Something went wrong",
+            status: 500,
+            res: "Error",
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.send({
+      error,
+      msg: "Error leaving chat",
+      status: 500,
+      res: "Error",
+    });
+  }
+});
 
 export default chat_router;

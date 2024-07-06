@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IUser {
+  _id?: string;
   username: string;
   profileIcon?: string; // Optional, because it has a default value
   occupation: string;
@@ -23,7 +24,7 @@ export interface IConversation {
 }
 
 export interface IMessage {
-  from_user: string;
+  from_user: mongoose.Types.ObjectId;
   content: string;
   type: "text" | "gif" | "image";
   sendAt?: Date; // Optional because it has a default value

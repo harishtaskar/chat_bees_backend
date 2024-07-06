@@ -181,7 +181,10 @@ user_router.get("/users", userAuth, async (req: any, res) => {
     const username = req.username;
     await connectDB();
     const users: any = await User.find({
-      $or: [{ username: { $regex: filter, $options: "i" } }],
+      $or: [
+        { username: { $regex: filter, $options: "i" } },
+        { occupation: { $regex: filter, $options: "i" } },
+      ],
       $and: [{ status: 1 }, { username: { $ne: username } }],
     });
     res.send({ msg: "This are users", users, status: 200, res: "ok" });
@@ -272,17 +275,26 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
 
       const connections = await User.find({ _id: { $in: users_ids } });
 
+      const updatedConnections = connections?.map((connection) => {
+        const connectionObject = connection.toObject();
+        const groupmember = groupMember?.find((gm) =>
+          gm?.user.equals(connection?._id)
+        );
+        const groupmemberObject = groupmember?.toObject();
+        return { ...groupmemberObject, ...connectionObject };
+      });
+
       if (connections.length) {
         res.send({
           msg: "Connection fetched successfully",
-          connections,
+          connections: updatedConnections,
           status: 200,
           res: "ok",
         });
       } else {
         res.send({
           msg: "No connections found",
-          connections,
+          connections: updatedConnections,
           status: 200,
           res: "ok",
         });
