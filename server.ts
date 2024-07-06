@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { PORT } from "./config/config";
 import bodyParser from "body-parser";
-var cors = require("cors");
+import cors from "cors";
 import user_router from "./routes/user_routes";
 import chat_router from "./routes/chat_routes";
 import SocketService from "./services/socket";
@@ -10,6 +10,7 @@ import http from "http";
 const app = express();
 import { startConsumer } from "./services/kafka";
 import conversation_router from "./routes/conversation_routes";
+import fetch from "node-fetch";
 
 const init = () => {
   startConsumer();

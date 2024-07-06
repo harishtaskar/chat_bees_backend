@@ -8,7 +8,6 @@ import {
 import fs from "fs";
 import path from "path";
 import { saveMessage } from "./utility";
-import { ObjectId } from "mongodb";
 import { IMessage } from "../types";
 
 const kafka = new Kafka({

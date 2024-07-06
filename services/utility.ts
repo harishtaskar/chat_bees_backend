@@ -3,6 +3,7 @@ import { GroupMember } from "../models/group_member_modal";
 import { Message } from "../models/message_modal";
 import connectDB from "../utils/database";
 import { ConversationMSGCount } from "../models/conversation_msg_count";
+import { sendEmail } from "./emails";
 
 export const saveMessage = async (message: any) => {
   try {
@@ -18,6 +19,12 @@ export const saveMessage = async (message: any) => {
         type: messageObj?.type,
       });
     }
+    // sendEmail(
+    //   `saveMessages`,
+    //   { meg: `Sample messages` },
+    //   `user_id`,
+    //   `username`
+    // );
   } catch (error) {
     console.log(error);
   }
