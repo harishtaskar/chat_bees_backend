@@ -1,6 +1,5 @@
 import "dotenv/config";
 import express from "express";
-import { PORT } from "./config/config";
 import bodyParser from "body-parser";
 import cors from "cors";
 import user_router from "./routes/user_routes";
