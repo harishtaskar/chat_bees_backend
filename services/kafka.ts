@@ -41,7 +41,6 @@ export const produceMessage = async (message: string) => {
 };
 
 export const startConsumer = async () => {
-  console.log("Kafka consumer is running...");
   const consumer = kafka.consumer({ groupId: "default" });
   await consumer.connect();
   await consumer.subscribe({ topic: "MESSAGES", fromBeginning: true });
@@ -57,7 +56,6 @@ export const startConsumer = async () => {
           await saveMessage(msgObj);
         }
       } catch (error) {
-        console.log("Something went wrong...", error);
         pause();
         setTimeout(() => {
           consumer.resume([{ topic: "MESSAGES" }]);
