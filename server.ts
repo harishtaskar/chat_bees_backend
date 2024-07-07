@@ -10,7 +10,6 @@ import http from "http";
 const app = express();
 import { startConsumer } from "./services/kafka";
 import conversation_router from "./routes/conversation_routes";
-import fetch from "node-fetch";
 
 const init = () => {
   startConsumer();
@@ -25,10 +24,6 @@ const init = () => {
   app.use("/conversation", conversation_router);
 
   socketService.io.attach(httpServer);
-
-  httpServer.listen(PORT, () => {
-    console.log(`app listening on port ${PORT}`);
-  });
 
   socketService.initListeners();
 };

@@ -16,7 +16,6 @@ export const sendEmail = async (
   user_id: string,
   user_name: string
 ) => {
-  console.log(CHATBEES_USER, CHATBEES_USER_PASSWORD);
   try {
     const message = `Error in ${location}, user: ${user_name}-${user_id}, error log: ${JSON.stringify(
       error
@@ -28,7 +27,6 @@ export const sendEmail = async (
       to: `someone ${CHATBEES_USER}`,
       subject: `SERVER ERROR on ${location}`,
     });
-    console.log(response);
   } catch (error) {
     console.log(error);
   }
