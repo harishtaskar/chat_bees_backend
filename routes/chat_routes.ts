@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import userAuth from "../middlewares/user_auth";
 import { User } from "../models/user_modal";
 import { Conversation } from "../models/conversation_modal";
@@ -9,10 +9,10 @@ import mongoose from "mongoose";
 
 const chat_router = Router();
 
-chat_router.post("/init", userAuth, async (req: any, res) => {
+chat_router.post("/init", userAuth, async (req: Request & { username?: string; user_id?: string }, res: Response) => {
   try {
     const { group_users, group_name } = req.body;
-    const requiredFields: any = {};
+    const requiredFields: { [key: string]: string } = {};
     if (group_users?.length === 0) {
       requiredFields.group_users = "required as Array of user id";
     } else if (!group_name || group_name?.length === 0) {
@@ -83,7 +83,7 @@ chat_router.post("/init", userAuth, async (req: any, res) => {
   }
 });
 
-chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
+chat_router.delete("/leave", userAuth, async (req: Request & { username?: string; user_id?: string }, res: Response,) => {
   try {
     const { user_id, conversation_id } = req.headers;
     const currentUserId = req.user_id;
@@ -99,7 +99,7 @@ chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
     } else {
       await connectDB();
       const users = [
-        new mongoose.Types.ObjectId(user_id),
+        new mongoose.Types.ObjectId(user_id as string),
         new mongoose.Types.ObjectId(currentUserId),
       ];
       const group_members_to_delete = await GroupMember.aggregate([
@@ -128,15 +128,15 @@ chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
         },
       ]);
 
-      const conv_to_delete = await Conversation.findById(
+      const conversation_to_delete = await Conversation.findById(
         group_members_to_delete[0].conversation
       );
 
       if (
         group_members_to_delete?.length > 1 &&
-        conv_to_delete?.type === "individual"
+        conversation_to_delete?.type === "individual"
       ) {
-        let result: any = null;
+        let result = null;
         for (const group_member of group_members_to_delete) {
           result = await GroupMember.deleteOne({
             user: group_member.user,
@@ -148,7 +148,7 @@ chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
           _id: group_members_to_delete[0].conversation,
         });
 
-        if (Number(result.deletedCount) && Number(result2.deletedCount)) {
+        if (result && result2 && Number(result.deletedCount) && Number(result2.deletedCount)) {
           res.send({
             msg: "Conversation Leaved",
             status: 200,
@@ -164,7 +164,7 @@ chat_router.delete("/leave", userAuth, async (req: any, res: any) => {
       } else {
         const result = await GroupMember.deleteOne({
           user: new mongoose.Types.ObjectId(currentUserId),
-          conversation: new mongoose.Types.ObjectId(conversation_id),
+          conversation: new mongoose.Types.ObjectId(conversation_id as string),
         });
         if (Number(result.deletedCount)) {
           res.send({

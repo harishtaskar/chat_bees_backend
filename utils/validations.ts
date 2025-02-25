@@ -15,8 +15,8 @@ export const userExists = async (username: string): Promise<boolean> => {
 };
 
 export const validateDOB = (dobString: string) => {
-  const dob: any = new Date(dobString);
-  if (isNaN(dob)) {
+  const dob: Date = new Date(dobString);
+  if (isNaN(dob.getTime())) {
     throw new Error("Invalid date format");
   }
   const today = new Date();

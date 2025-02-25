@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { GroupMember } from "../models/group_member_modal";
 import { Message } from "../models/message_modal";
 import connectDB from "../utils/database";
@@ -50,12 +49,12 @@ export const increaseUnreadMSGCount = async (
       { conversation_id, user_id },
       { $inc: { unread_msg: 1 } }
     );
-    const conv_msg_count = await ConversationMSGCount.findOne({
+    const conversation_msg_count = await ConversationMSGCount.findOne({
       user_id,
       conversation_id,
     });
-    if (conv_msg_count) {
-      return conv_msg_count;
+    if (conversation_msg_count) {
+      return conversation_msg_count;
     } else {
       return null;
     }

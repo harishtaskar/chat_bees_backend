@@ -7,12 +7,12 @@ import chat_router from "./routes/chat_routes";
 import SocketService from "./services/socket";
 import http from "http";
 const app = express();
-import { startConsumer } from "./services/kafka";
+// import { startConsumer } from "./services/kafka";
 import conversation_router from "./routes/conversation_routes";
 import { PORT } from "./config/config";
 
 const init = () => {
-  startConsumer();
+  // startConsumer();
   const socketService = new SocketService();
 
   const httpServer = new http.Server(app);

@@ -1,12 +1,13 @@
 import jwt from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
 import { JWT_PASSWORD } from "../config/config";
 
-const jwtPassword: any = JWT_PASSWORD;
-const userAuth = async (req: any, res: any, next: any) => {
+const jwtPassword: string = JWT_PASSWORD;
+const userAuth = async (req: Request & { username?: string; user_id?: string }, res: Response, next: NextFunction) => {
   try {
     const auth = req.headers.authorization;
-    const token = auth.split(" ")[1];
-    const decodedToken: any = jwt.verify(token, jwtPassword);
+    const token = auth ? auth.split(" ")[1] : '';
+    const decodedToken: jwt.JwtPayload = jwt.verify(token, jwtPassword) as jwt.JwtPayload;
     if (decodedToken) {
       req.username = decodedToken.username;
       req.user_id = decodedToken.user_id;

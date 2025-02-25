@@ -20,85 +20,78 @@ const jwtPassword: any = JWT_PASSWORD;
 
 user_router.post("/signup", async (req, res) => {
   try {
-    const { occupation, username, password, gender, dob, profileIcon } =
-      req?.body;
-    const requiredFields: any = {};
-    if (username?.trim() === "" || !validateUsername(username?.trim())) {
-      requiredFields.username = "require without capital latter and space";
-    } else if (dob.trim() === "") {
-      requiredFields.dob = "require";
-    } else if (occupation.trim() === "") {
-      requiredFields.occupation = "require";
-    } else if (profileIcon?.trim() === "") {
-      requiredFields.profileIcon = "require";
-    } else if (gender?.trim() === "") {
-      requiredFields.gender = { require: true, type: "male/female" };
-    } else if (password?.trim().length < 8) {
-      requiredFields.password = { require: true, length: ">=8" };
-    }
-    if (Object.keys(requiredFields).length !== 0) {
-      res.send({
-        status: 500,
-        require: requiredFields,
+    const { occupation, username, password, gender, dob, profileIcon } = req.body;
+    console.log(occupation, username, password, gender, dob, profileIcon);
+
+    // Validate all required fields at once
+    const validationErrors = {
+      ...((!username?.trim() || !validateUsername(username?.trim())) && {
+        username: "require without capital latter and space"
+      }),
+      ...(!dob?.trim() && { dob: "require" }),
+      ...(!occupation?.trim() && { occupation: "require" }),
+      ...(!profileIcon?.trim() && { profileIcon: "require" }),
+      ...(!gender?.trim() && { gender: { require: true, type: "male/female" } }),
+      ...(password?.trim().length < 8 && { password: { require: true, length: ">=8" } })
+    };
+
+    if (Object.keys(validationErrors).length > 0) {
+      return res.status(400).json({
+        status: 400,
+        require: validationErrors,
         msg: "invalid payload",
-        res: "Error",
+        res: "Error"
       });
-    } else {
-      await connectDB();
-      const user_name = NormalizeUsername(username);
-      if (await userExists(user_name)) {
-        res.send({
-          msg: "Username Already Exists",
-          status: 200,
-          res: "Invalid",
-        });
-      } else if (!validateDOB(dob)) {
-        res.send({
-          msg: "Your age should be more than 16",
-          status: 200,
-          res: "Invalid",
-        });
-      } else {
-        const saltRound = 10;
-        bcrypt.genSalt(saltRound, function (err, salt) {
-          bcrypt.hash(password, salt, async function (err, hashedPasswrod) {
-            if (err) {
-              res.send({
-                err,
-                msg: "Error while hashing password",
-                status: 500,
-                res: "Error",
-              });
-            }
-            const user = new User({
-              username: user_name,
-              dob,
-              gender,
-              salt,
-              password: hashedPasswrod,
-              profileIcon,
-              occupation,
-            });
-            await user.save();
-            if (user) {
-              res.send({
-                msg: "User Registered Successfully",
-                user,
-                status: 200,
-                res: "ok",
-              });
-            }
-          });
-        });
-      }
     }
-  } catch (error) {
-    console.log(error);
-    res.send({
-      error,
+
+    await connectDB();
+    const normalizedUsername = NormalizeUsername(username);
+
+    // Check username and DOB validation
+    if (await userExists(normalizedUsername)) {
+      return res.status(409).json({
+        msg: "Username Already Exists",
+        status: 409,
+        res: "Invalid"
+      });
+    }
+
+    if (!validateDOB(dob)) {
+      return res.status(400).json({
+        msg: "Your age should be more than 16",
+        status: 400,
+        res: "Invalid"
+      });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      username: normalizedUsername,
+      dob,
+      gender,
+      salt,
+      password: hashedPassword,
+      profileIcon,
+      occupation
+    });
+
+    return res.status(201).json({
+      msg: "User Registered Successfully",
+      user,
+      status: 201,
+      res: "ok"
+    });
+
+  } catch (error: any) {
+    console.error("Signup error:", error);
+    return res.status(500).json({
+      error: error.message,
       msg: "Error while creating new user",
       status: 500,
-      res: "Error",
+      res: "Error"
     });
   }
 });
@@ -265,10 +258,10 @@ user_router.get("/connections", userAuth, async (req: any, res: any) => {
         user: new ObjectId(user_id),
       });
 
-      const conv_ids = conversations?.map((conn) => conn.conversation);
+      const conversation_ids = conversations?.map((conn) => conn.conversation);
 
       const groupMember = await GroupMember.find({
-        $and: [{ conversation: { $in: conv_ids } }, { user: { $ne: user_id } }],
+        $and: [{ conversation: { $in: conversation_ids } }, { user: { $ne: user_id } }],
       });
 
       const users_ids = groupMember?.map((conn) => conn.user);

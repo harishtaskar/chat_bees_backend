@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import userAuth from "../middlewares/user_auth";
 import connectDB from "../utils/database";
 import { ConversationMSGCount } from "../models/conversation_msg_count";
@@ -9,7 +9,7 @@ const conversation_router = Router();
 conversation_router.post(
   "increase-unread_msg-count",
   userAuth,
-  async (req: any, res: any) => {
+  async (req: Request & { user_id?: string }, res: Response,) => {
     try {
       const user_id = req.user_id;
       const conversation_id = req.body;
@@ -28,13 +28,13 @@ conversation_router.post(
         { conversation_id, user_id },
         { $inc: { unread_msg: 1 } }
       );
-      const conv_msg_count = await ConversationMSGCount.findOne({
+      const conversation_msg_count = await ConversationMSGCount.findOne({
         user_id,
         conversation_id,
       });
-      if (updatedRes.modifiedCount !== 0 && conv_msg_count) {
+      if (updatedRes.modifiedCount !== 0 && conversation_msg_count) {
         res.send({
-          conv_msg_count,
+          conversation_msg_count,
           msg: "Unread Msg updated successfully",
           status: 200,
           res: "ok",
@@ -58,10 +58,9 @@ conversation_router.post(
   }
 );
 
-conversation_router.get("/messages", userAuth, async (req: any, res: any) => {
+conversation_router.get("/messages", userAuth, async (req: Request, res: Response,) => {
   try {
     const { conversation_id } = req.query;
-    console.log("conversation_id==>", conversation_id);
     if (!conversation_id) {
       res.send({
         msg: "Invalid Response",

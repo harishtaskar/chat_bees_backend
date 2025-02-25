@@ -1,28 +1,33 @@
 import { Server } from "socket.io";
 import { IMessage } from "../types";
-import { Redis } from "ioredis";
-import {
-  REDIS_HOST,
-  REDIS_PASSWORD,
-  REDIS_PORT,
-  REDIS_USERNAME,
-} from "../config/config";
+// import Redis from 'ioredis';
+// const redis = new Redis({
+//   host: '127.0.0.1',
+//   port: 6379,
+// });
 
-import { produceMessage } from "./kafka";
+// import {
+//   REDIS_HOST,
+//   REDIS_PASSWORD,
+//   REDIS_PORT,
+//   REDIS_USERNAME,
+// } from "../config/config";
+
+// import { produceMessage } from "./kafka";
 import { getGroupMembers } from "./utility";
 
-const pub = new Redis({
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  username: REDIS_USERNAME,
-  password: REDIS_PASSWORD,
-});
-const sub = new Redis({
-  host: REDIS_HOST,
-  port: REDIS_PORT,
-  username: REDIS_USERNAME,
-  password: REDIS_PASSWORD,
-});
+// const pub = new Redis({
+//   host: REDIS_HOST,
+//   port: Number(REDIS_PORT),
+//   username: REDIS_USERNAME,
+//   password: REDIS_PASSWORD,
+// });
+// const sub = new Redis({
+//   host: REDIS_HOST,
+//   port: Number(REDIS_PORT),
+//   username: REDIS_USERNAME,
+//   password: REDIS_PASSWORD,
+// });
 
 class SocketService {
   private _io: Server;
@@ -33,7 +38,10 @@ class SocketService {
         origin: "*",
       },
     });
-    sub.subscribe("MESSAGES");
+    // redis.on('MESSAGES', (channel: any, message: any) => {
+    //   console.log(`New message: ${message}`);
+    // });
+    // sub.subscribe("MESSAGES");
   }
 
   public initListeners() {
@@ -49,7 +57,6 @@ class SocketService {
         if (group_members !== null) {
           for (const group_member of group_members) {
             console.log(
-              "group_member_userid ==>",
               group_member?.user?.toString()
             );
             io.to(group_member?.user?.toString()).emit(
@@ -61,7 +68,9 @@ class SocketService {
       });
 
       socket.on("event:message", async (message: IMessage) => {
-        await pub.publish("MESSAGES", JSON.stringify(message));
+        console.log("message", message);
+        // redis.publish("MESSAGES", JSON.stringify(message));
+        // await pub.publish("MESSAGES", JSON.stringify(message));
       });
 
       socket.on("disconnect", () => {
@@ -69,13 +78,13 @@ class SocketService {
       });
     });
 
-    sub.on("message", async (channel, message: any) => {
-      if (channel === "MESSAGES") {
-        const messageObj = JSON.parse(message);
-        io.to(messageObj?.conversation_id).emit("message", message);
-        await produceMessage(JSON.stringify(message));
-      }
-    });
+    // sub.on("message", async (channel, message: any) => {
+    //   if (channel === "MESSAGES") {
+    //     const messageObj = JSON.parse(message);
+    //     io.to(messageObj?.conversation_id).emit("message", message);
+    //     // await produceMessage(JSON.stringify(message));
+    //   }
+    // });
   }
 
   get io() {
