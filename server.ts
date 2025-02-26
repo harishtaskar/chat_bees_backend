@@ -18,7 +18,10 @@ const init = () => {
   const httpServer = new http.Server(app);
 
   app.use(cors());
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
   app.use(bodyParser.json());
+  
   app.use("/user", user_router);
   app.use("/chat", chat_router);
   app.use("/conversation", conversation_router);
